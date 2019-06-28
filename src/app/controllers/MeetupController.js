@@ -1,5 +1,8 @@
 import * as yup from 'yup';
 import { isBefore, parse } from 'date-fns';
+import { promisify } from 'util';
+import { resolve } from 'path';
+import { unlink } from 'fs';
 
 import Meetup from '../models/Meetup';
 
@@ -36,12 +39,13 @@ class MeetupController {
         .json({ error: "It's not possible to create events with a past date" });
     }
 
-    const { id, description, location, date } = await Meetup.create({
+    const { id, description, location, date, banner } = await Meetup.create({
       ...req.body,
       user_id: req.userId,
+      banner: req.file.filename,
     });
 
-    return res.json({ id, description, location, date });
+    return res.json({ id, description, location, date, banner });
   }
 
   async update(req, res) {
@@ -50,16 +54,37 @@ class MeetupController {
     });
 
     if (!meetup) {
+      /**
+       * TODO: Find a more efficient way to not save the file when there's some error
+       */
+      await promisify(unlink)(req.file.path);
       return res.status(400).json({ error: 'Meetup not found' });
     }
 
     if (isBefore(meetup.date, new Date())) {
+      await promisify(unlink)(req.file.path);
       return res.status(400).json({ error: 'This meetup already happened' });
     }
 
-    const { id, description, location, date } = await meetup.update(req.body);
+    if (req.file) {
+      const bannerPath = `${resolve(
+        __dirname,
+        '..',
+        '..',
+        '..',
+        'tmp',
+        'uploads'
+      )}/${meetup.banner}`;
 
-    return res.json({ id, description, location, date });
+      await promisify(unlink)(bannerPath);
+    }
+
+    const { id, description, location, date, banner } = await meetup.update({
+      ...req.body,
+      banner: req.file ? req.file.filename : null,
+    });
+
+    return res.json({ id, description, location, date, banner });
   }
 
   async delete(req, res) {
