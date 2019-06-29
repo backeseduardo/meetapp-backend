@@ -1,10 +1,9 @@
 import * as yup from 'yup';
 import { isBefore, parse } from 'date-fns';
-import { promisify } from 'util';
-import { resolve } from 'path';
-import { unlink } from 'fs';
 
 import Meetup from '../models/Meetup';
+import File from '../models/File';
+import User from '../models/User';
 
 class MeetupController {
   async index(req, res) {
@@ -13,6 +12,19 @@ class MeetupController {
       order: [['date', 'DESC']],
       limit: 20,
       offset: (req.query.page - 1) * 20,
+      attributes: ['id', 'description', 'location', 'date'],
+      include: [
+        {
+          model: File,
+          as: 'banner',
+          attributes: ['id', 'path', 'url'],
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email'],
+        },
+      ],
     });
 
     return res.json(meetups);
@@ -42,7 +54,6 @@ class MeetupController {
     const { id, description, location, date, banner } = await Meetup.create({
       ...req.body,
       user_id: req.userId,
-      banner: req.file.filename,
     });
 
     return res.json({ id, description, location, date, banner });
@@ -54,47 +65,34 @@ class MeetupController {
     });
 
     if (!meetup) {
-      /**
-       * TODO: Find a more efficient way to not save the file when there's some error
-       */
-      await promisify(unlink)(req.file.path);
       return res.status(400).json({ error: 'Meetup not found' });
     }
 
     if (isBefore(meetup.date, new Date())) {
-      await promisify(unlink)(req.file.path);
       return res.status(400).json({ error: 'This meetup already happened' });
     }
 
-    if (req.file) {
-      const bannerPath = `${resolve(
-        __dirname,
-        '..',
-        '..',
-        '..',
-        'tmp',
-        'uploads'
-      )}/${meetup.banner}`;
+    const { id, description, location, date } = await meetup.update(req.body);
 
-      await promisify(unlink)(bannerPath);
-    }
-
-    const { id, description, location, date, banner } = await meetup.update({
-      ...req.body,
-      banner: req.file ? req.file.filename : null,
-    });
-
-    return res.json({ id, description, location, date, banner });
+    return res.json({ id, description, location, date });
   }
 
   async delete(req, res) {
     const meetup = await Meetup.findOne({
       where: { id: req.params.id, user_id: req.userId },
+      include: [
+        {
+          model: File,
+          as: 'banner',
+        },
+      ],
     });
 
     if (isBefore(meetup.date, new Date())) {
       return res.status(400).json({ error: 'Cannot cancel a past meetup' });
     }
+
+    await meetup.banner.destroy();
 
     await meetup.destroy();
 
