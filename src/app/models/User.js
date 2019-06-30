@@ -25,6 +25,13 @@ class User extends Model {
     return this;
   }
 
+  static associate(models) {
+    this.belongsToMany(models.Meetup, {
+      through: 'users_meetups',
+      as: 'subscriptions',
+    });
+  }
+
   checkPassword(password) {
     return bcrypt.compare(password, this.password_hash);
   }

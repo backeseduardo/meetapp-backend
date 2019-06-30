@@ -92,9 +92,7 @@ class MeetupController {
       return res.status(400).json({ error: 'Cannot cancel a past meetup' });
     }
 
-    await meetup.banner.destroy();
-
-    await meetup.destroy();
+    await Promise.all([meetup.banner.destroy(), meetup.destroy()]);
 
     return res.json();
   }

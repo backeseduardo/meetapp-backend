@@ -14,7 +14,7 @@ export default async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, authConfig.tokenSecret);
 
-    req.userId = decoded.id;
+    req.userId = Number(decoded.id);
 
     return next();
   } catch (err) {
