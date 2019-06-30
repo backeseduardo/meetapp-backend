@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { isBefore, isSameHour } from 'date-fns';
 
 import User from '../models/User';
@@ -6,6 +7,30 @@ import Queue from '../../lib/Queue';
 import MeetupSubscriptionMail from '../jobs/MeetupSubscriptionMail';
 
 class SubscriptionController {
+  async index(req, res) {
+    const meetups = await Meetup.findAll({
+      where: {
+        date: {
+          [Op.gte]: new Date(),
+        },
+      },
+      include: [
+        {
+          model: User,
+          // through: 'users_meetups',
+          as: 'participants',
+          where: {
+            id: req.userId,
+          },
+          attributes: [],
+        },
+      ],
+      order: [['date', 'asc']],
+    });
+
+    return res.json(meetups);
+  }
+
   async update(req, res) {
     const user = await User.findOne({
       where: { id: req.userId },
