@@ -8,7 +8,7 @@ import User from '../models/User';
 
 class MeetupController {
   async index(req, res) {
-    const meetups = await Meetup.findAll({
+    const meetups = await Meetup.findAndCountAll({
       where: {
         user_id: req.userId,
         date: {
