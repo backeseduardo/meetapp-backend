@@ -21,7 +21,7 @@ class MeetupController {
       order: [['date', 'DESC']],
       limit: 10,
       offset: (req.query.page - 1) * 20,
-      attributes: ['id', 'description', 'location', 'date'],
+      attributes: ['id', 'title', 'description', 'location', 'date'],
       include: [
         {
           model: File,
@@ -41,6 +41,7 @@ class MeetupController {
 
   async store(req, res) {
     const schema = yup.object().shape({
+      title: yup.string().required(),
       description: yup.string().required(),
       location: yup.string().required(),
       date: yup.date().required(),
@@ -60,12 +61,19 @@ class MeetupController {
         .json({ error: "It's not possible to create events with a past date" });
     }
 
-    const { id, description, location, date, banner } = await Meetup.create({
+    const {
+      id,
+      title,
+      description,
+      location,
+      date,
+      banner,
+    } = await Meetup.create({
       ...req.body,
       user_id: req.userId,
     });
 
-    return res.json({ id, description, location, date, banner });
+    return res.json({ id, title, description, location, date, banner });
   }
 
   async update(req, res) {
@@ -81,9 +89,11 @@ class MeetupController {
       return res.status(400).json({ error: 'This meetup already happened' });
     }
 
-    const { id, description, location, date } = await meetup.update(req.body);
+    const { id, title, description, location, date } = await meetup.update(
+      req.body
+    );
 
-    return res.json({ id, description, location, date });
+    return res.json({ id, title, description, location, date });
   }
 
   async delete(req, res) {
