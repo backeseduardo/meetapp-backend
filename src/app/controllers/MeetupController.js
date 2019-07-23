@@ -8,10 +8,35 @@ import User from '../models/User';
 
 class MeetupController {
   async index(req, res) {
+    const { id } = req.params;
+
+    if (id) {
+      const meetup = await Meetup.findOne({
+        where: {
+          user_id: req.userId,
+          id,
+        },
+        order: [['date', 'DESC']],
+        attributes: ['id', 'title', 'description', 'location', 'date'],
+        include: [
+          {
+            model: File,
+            as: 'banner',
+            attributes: ['id', 'path', 'url'],
+          },
+        ],
+      });
+
+      if (!meetup) {
+        return res.status(404).json({ error: 'Meetup not found' });
+      }
+
+      return res.json(meetup);
+    }
+
     const meetups = await Meetup.findAndCountAll({
       where: {
         user_id: req.userId,
-        ...(req.params.id ? { id: req.params.id } : {}),
         date: {
           [Op.between]: [
             startOfDay(parse(req.query.date)),
