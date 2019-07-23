@@ -1,6 +1,6 @@
 import * as yup from 'yup';
-import { isBefore, parse /* startOfDay, endOfDay */ } from 'date-fns';
-// import { Op } from 'sequelize';
+import { isBefore, parse, startOfDay, endOfDay } from 'date-fns';
+import { Op } from 'sequelize';
 
 import Meetup from '../models/Meetup';
 import File from '../models/File';
@@ -12,16 +12,16 @@ class MeetupController {
       where: {
         user_id: req.userId,
         ...(req.params.id ? { id: req.params.id } : {}),
-        // date: {
-        //   [Op.between]: [
-        //     startOfDay(parse(req.query.date)),
-        //     endOfDay(parse(req.query.date)),
-        //   ],
-        // },
+        date: {
+          [Op.between]: [
+            startOfDay(parse(req.query.date)),
+            endOfDay(parse(req.query.date)),
+          ],
+        },
       },
-      // order: [['date', 'DESC']],
-      // limit: 10,
-      // offset: (req.query.page - 1) * 20,
+      order: [['date', 'DESC']],
+      limit: 10,
+      offset: (req.query.page - 1) * 20,
       attributes: ['id', 'title', 'description', 'location', 'date'],
       include: [
         {
