@@ -37,16 +37,24 @@ class MeetupController {
     const meetups = await Meetup.findAndCountAll({
       where: {
         user_id: req.userId,
-        date: {
-          [Op.between]: [
-            startOfDay(parse(req.query.date)),
-            endOfDay(parse(req.query.date)),
-          ],
-        },
+        ...(req.query.date
+          ? {
+              date: {
+                [Op.between]: [
+                  startOfDay(parse(req.query.date)),
+                  endOfDay(parse(req.query.date)),
+                ],
+              },
+            }
+          : {}),
       },
       order: [['date', 'DESC']],
-      limit: 10,
-      offset: (req.query.page - 1) * 20,
+      ...(req.query.page
+        ? {
+            limit: 20,
+            offset: (req.query.page - 1) * 20,
+          }
+        : {}),
       attributes: ['id', 'title', 'description', 'location', 'date'],
       include: [
         {
