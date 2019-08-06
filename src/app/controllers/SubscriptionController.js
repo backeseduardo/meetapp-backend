@@ -3,6 +3,7 @@ import { isBefore, isSameHour } from 'date-fns';
 
 import User from '../models/User';
 import Meetup from '../models/Meetup';
+import File from '../models/File';
 import Queue from '../../lib/Queue';
 import MeetupSubscriptionMail from '../jobs/MeetupSubscriptionMail';
 
@@ -23,6 +24,16 @@ class SubscriptionController {
             id: req.userId,
           },
           attributes: [],
+        },
+        {
+          model: File,
+          as: 'banner',
+          attributes: ['path', 'url'],
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['name'],
         },
       ],
       order: [['date', 'asc']],
@@ -95,6 +106,24 @@ class SubscriptionController {
       user,
       meetup,
     });
+
+    return res.json();
+  }
+
+  async delete(req, res) {
+    const user = await User.findOne({
+      where: { id: req.userId },
+      include: [
+        {
+          model: Meetup,
+          through: { attributes: [] },
+          as: 'subscriptions',
+          attributes: ['id', 'description', 'date'],
+        },
+      ],
+    });
+
+    await user.removeSubscription(req.params.id);
 
     return res.json();
   }

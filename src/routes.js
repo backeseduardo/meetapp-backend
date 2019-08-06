@@ -9,6 +9,7 @@ import SessionController from './app/controllers/SessionController';
 import MeetupController from './app/controllers/MeetupController';
 import FileController from './app/controllers/FileController';
 import SubscriptionController from './app/controllers/SubscriptionController';
+import AvailableController from './app/controllers/AvailableController';
 
 const routes = new Router();
 
@@ -31,5 +32,8 @@ routes.delete('/meetups/:id', MeetupController.delete);
 
 routes.get('/subscriptions', SubscriptionController.index);
 routes.put('/subscriptions/:id', SubscriptionController.update);
+routes.delete('/subscriptions/:id', SubscriptionController.delete);
+
+routes.get('/available', AvailableController.index);
 
 export default routes;
